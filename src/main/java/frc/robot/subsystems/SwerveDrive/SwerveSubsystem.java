@@ -8,216 +8,233 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class SwerveSubsystem extends SubsystemBase {
 
-        private final SwerveModule frontLeft;
-        private final SwerveModule frontRight;
-        private final SwerveModule backLeft;
-        private final SwerveModule backRight;
+    private final SwerveModule frontLeft;
+    private final SwerveModule frontRight;
+    private final SwerveModule backLeft;
+    private final SwerveModule backRight;
 
-        // Gyroscope used to determine the robot's heading.
-        private final Pigeon2 gyro = new Pigeon2(SwerveConstants.PIGEON_ID);
+    // Gyro abstraction and its sensor data.
+    private final GyroIO gyroIO;
+    private final GyroIO.GyroIOInputs gyroInputs =
+            new GyroIO.GyroIOInputs();
 
-        // Determines the position of each module relative to the robot center.
-        private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(
+    // Determines the position of each module relative to the robot center.
+    private final SwerveDriveKinematics kinematics =
+            new SwerveDriveKinematics(
 
-                        new Translation2d(
-                                        Units.inchesToMeters(9.375),
-                                        Units.inchesToMeters(12.875)),
+                    new Translation2d(
+                            Units.inchesToMeters(9.375),
+                            Units.inchesToMeters(12.875)),
 
-                        new Translation2d(
-                                        Units.inchesToMeters(9.375),
-                                        Units.inchesToMeters(-12.875)),
+                    new Translation2d(
+                            Units.inchesToMeters(9.375),
+                            Units.inchesToMeters(-12.875)),
 
-                        new Translation2d(
-                                        Units.inchesToMeters(-9.375),
-                                        Units.inchesToMeters(12.875)),
+                    new Translation2d(
+                            Units.inchesToMeters(-9.375),
+                            Units.inchesToMeters(12.875)),
 
-                        new Translation2d(
-                                        Units.inchesToMeters(-9.375),
-                                        Units.inchesToMeters(-12.875)));
+                    new Translation2d(
+                            Units.inchesToMeters(-9.375),
+                            Units.inchesToMeters(-12.875)));
 
-        // Constructor initializes the four modules.
-        public SwerveSubsystem() {
+    // Constructor initializes modules and gyro.
+    public SwerveSubsystem() {
 
-                // Choose whether to use physical hardware or simulation.
-                boolean useSimulation = edu.wpi.first.wpilibj.RobotBase.isSimulation();
+        boolean useSimulation =
+                edu.wpi.first.wpilibj.RobotBase.isSimulation();
 
-                if (useSimulation) {
+        if (useSimulation) {
 
-                        // Simulation implementations.
-                        frontLeft = new SwerveModule(new SwerveModuleIOSim());
-                        frontRight = new SwerveModule(new SwerveModuleIOSim());
-                        backLeft = new SwerveModule(new SwerveModuleIOSim());
-                        backRight = new SwerveModule(new SwerveModuleIOSim());
+            // Simulation implementations.
+            frontLeft = new SwerveModule(new SwerveModuleIOSim());
+            frontRight = new SwerveModule(new SwerveModuleIOSim());
+            backLeft = new SwerveModule(new SwerveModuleIOSim());
+            backRight = new SwerveModule(new SwerveModuleIOSim());
 
-                } else {
+            gyroIO = new GyroIOSim();
 
-                        // Real hardware implementations.
-                        frontLeft = new SwerveModule(
-                                        new SwerveModuleIOReal(
-                                                        SwerveConstants.FRONT_LEFT_DRIVE_ID,
-                                                        SwerveConstants.FRONT_LEFT_STEER_ID,
-                                                        SwerveConstants.FRONT_LEFT_CANCODER_ID,
-                                                        SwerveConstants.FRONT_LEFT_OFFSET));
+        } else {
 
-                        frontRight = new SwerveModule(
-                                        new SwerveModuleIOReal(
-                                                        SwerveConstants.FRONT_RIGHT_DRIVE_ID,
-                                                        SwerveConstants.FRONT_RIGHT_STEER_ID,
-                                                        SwerveConstants.FRONT_RIGHT_CANCODER_ID,
-                                                        SwerveConstants.FRONT_RIGHT_OFFSET));
+            // Real hardware implementations.
+            frontLeft = new SwerveModule(
+                    new SwerveModuleIOReal(
+                            SwerveConstants.FRONT_LEFT_DRIVE_ID,
+                            SwerveConstants.FRONT_LEFT_STEER_ID,
+                            SwerveConstants.FRONT_LEFT_CANCODER_ID,
+                            SwerveConstants.FRONT_LEFT_OFFSET));
 
-                        backLeft = new SwerveModule(
-                                        new SwerveModuleIOReal(
-                                                        SwerveConstants.BACK_LEFT_DRIVE_ID,
-                                                        SwerveConstants.BACK_LEFT_STEER_ID,
-                                                        SwerveConstants.BACK_LEFT_CANCODER_ID,
-                                                        SwerveConstants.BACK_LEFT_OFFSET));
+            frontRight = new SwerveModule(
+                    new SwerveModuleIOReal(
+                            SwerveConstants.FRONT_RIGHT_DRIVE_ID,
+                            SwerveConstants.FRONT_RIGHT_STEER_ID,
+                            SwerveConstants.FRONT_RIGHT_CANCODER_ID,
+                            SwerveConstants.FRONT_RIGHT_OFFSET));
 
-                        backRight = new SwerveModule(
-                                        new SwerveModuleIOReal(
-                                                        SwerveConstants.BACK_RIGHT_DRIVE_ID,
-                                                        SwerveConstants.BACK_RIGHT_STEER_ID,
-                                                        SwerveConstants.BACK_RIGHT_CANCODER_ID,
-                                                        SwerveConstants.BACK_RIGHT_OFFSET));
-                }
+            backLeft = new SwerveModule(
+                    new SwerveModuleIOReal(
+                            SwerveConstants.BACK_LEFT_DRIVE_ID,
+                            SwerveConstants.BACK_LEFT_STEER_ID,
+                            SwerveConstants.BACK_LEFT_CANCODER_ID,
+                            SwerveConstants.BACK_LEFT_OFFSET));
+
+            backRight = new SwerveModule(
+                    new SwerveModuleIOReal(
+                            SwerveConstants.BACK_RIGHT_DRIVE_ID,
+                            SwerveConstants.BACK_RIGHT_STEER_ID,
+                            SwerveConstants.BACK_RIGHT_CANCODER_ID,
+                            SwerveConstants.BACK_RIGHT_OFFSET));
+
+            gyroIO = new GyroIOReal(SwerveConstants.PIGEON_ID);
+        }
+    }
+
+    public void calculateModuleStates(
+            double xSpeed,
+            double ySpeed,
+            double rotationSpeed) {
+
+        ChassisSpeeds chassisSpeeds =
+                new ChassisSpeeds(xSpeed, ySpeed, rotationSpeed);
+
+        SwerveModuleState[] states =
+                kinematics.toSwerveModuleStates(chassisSpeeds);
+
+        String[] names = {
+                "Front Left",
+                "Front Right",
+                "Back Left",
+                "Back Right"
+        };
+
+        for (int i = 0; i < states.length; i++) {
+
+            SmartDashboard.putNumber(
+                    names[i] + " Desired Speed",
+                    states[i].speedMetersPerSecond);
+
+            SmartDashboard.putNumber(
+                    names[i] + " Desired Angle",
+                    states[i].angle.getDegrees());
+        }
+    }
+
+    public void setAllModuleSpeed(double speedMetersPerSecond) {
+
+        frontLeft.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
+        frontRight.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
+        backLeft.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
+        backRight.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
+    }
+
+    public void drive(
+            double forward,
+            double strafe,
+            double rotation,
+            boolean fieldRelative) {
+
+        ChassisSpeeds chassisSpeeds;
+
+        if (fieldRelative) {
+
+            chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
+                    forward,
+                    strafe,
+                    rotation,
+                    getHeading());
+
+        } else {
+
+            chassisSpeeds =
+                    new ChassisSpeeds(forward, strafe, rotation);
         }
 
-        public void calculateModuleStates(
-                        double xSpeed,
-                        double ySpeed,
-                        double rotationSpeed) {
+        SwerveModuleState[] states =
+                kinematics.toSwerveModuleStates(chassisSpeeds);
 
-                ChassisSpeeds chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, rotationSpeed);
+        SwerveDriveKinematics.desaturateWheelSpeeds(
+                states,
+                SwerveConstants.MAX_SPEED_METERS_PER_SECOND);
 
-                SwerveModuleState[] states = kinematics.toSwerveModuleStates(chassisSpeeds);
+        frontLeft.setDesiredState(states[0]);
+        frontRight.setDesiredState(states[1]);
+        backLeft.setDesiredState(states[2]);
+        backRight.setDesiredState(states[3]);
+    }
 
-                String[] names = {
-                                "Front Left",
-                                "Front Right",
-                                "Back Left",
-                                "Back Right"
-                };
+    public void crabwalk(
+            double forward,
+            double strafe,
+            double rotation) {
 
-                for (int i = 0; i < states.length; i++) {
+        ChassisSpeeds chassisSpeeds =
+                new ChassisSpeeds(forward, strafe, rotation);
 
-                        SmartDashboard.putNumber(
-                                        names[i] + " Desired Speed",
-                                        states[i].speedMetersPerSecond);
+        SwerveModuleState[] states =
+                kinematics.toSwerveModuleStates(chassisSpeeds);
 
-                        SmartDashboard.putNumber(
-                                        names[i] + " Desired Angle",
-                                        states[i].angle.getDegrees());
-                }
+        SwerveDriveKinematics.desaturateWheelSpeeds(
+                states,
+                SwerveConstants.MAX_SPEED_METERS_PER_SECOND);
+
+        frontLeft.setDesiredState(states[0]);
+        frontRight.setDesiredState(states[1]);
+        backLeft.setDesiredState(states[2]);
+        backRight.setDesiredState(states[3]);
+    }
+
+    public void stopModules() {
+
+        frontLeft.stop();
+        frontRight.stop();
+        backLeft.stop();
+        backRight.stop();
+    }
+
+    public void testKinematics() {
+        calculateModuleStates(1.0, 0.0, 0.0);
+    }
+
+    public Rotation2d getHeading() {
+
+        if (!gyroInputs.connected) {
+            return new Rotation2d();
         }
 
-        public void setAllModuleSpeed(double speedMetersPerSecond) {
+        return Rotation2d.fromDegrees(gyroInputs.yawDegrees);
+    }
 
-                frontLeft.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
-                frontRight.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
-                backLeft.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
-                backRight.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
-        }
+    public void resetGyro() {
+        gyroIO.reset();
+        gyroIO.updateInputs(gyroInputs);
+    }
 
-        public void drive(
-                        double forward,
-                        double strafe,
-                        double rotation,
-                        boolean fieldRelative) {
+    @Override
+    public void periodic() {
 
-                ChassisSpeeds chassisSpeeds;
+        // Refresh module and gyro sensor data.
+        frontLeft.updateInputs();
+        frontRight.updateInputs();
+        backLeft.updateInputs();
+        backRight.updateInputs();
 
-                if (fieldRelative) {
+        gyroIO.updateInputs(gyroInputs);
 
-                        chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-                                        forward,
-                                        strafe,
-                                        rotation,
-                                        getHeading());
+        SmartDashboard.putNumber(
+                "Robot Heading",
+                getHeading().getDegrees());
 
-                } else {
+        frontLeft.updateDashboard("Front Left");
+        frontRight.updateDashboard("Front Right");
+        backLeft.updateDashboard("Back Left");
+        backRight.updateDashboard("Back Right");
 
-                        chassisSpeeds = new ChassisSpeeds(forward, strafe, rotation);
-                }
-
-                SwerveModuleState[] states = kinematics.toSwerveModuleStates(chassisSpeeds);
-
-                SwerveDriveKinematics.desaturateWheelSpeeds(
-                                states,
-                                SwerveConstants.MAX_SPEED_METERS_PER_SECOND);
-
-                frontLeft.setDesiredState(states[0]);
-                frontRight.setDesiredState(states[1]);
-                backLeft.setDesiredState(states[2]);
-                backRight.setDesiredState(states[3]);
-        }
-
-        public void crabwalk(
-                        double forward,
-                        double strafe,
-                        double rotation) {
-
-                ChassisSpeeds chassisSpeeds = new ChassisSpeeds(forward, strafe, rotation);
-
-                SwerveModuleState[] states = kinematics.toSwerveModuleStates(chassisSpeeds);
-
-                SwerveDriveKinematics.desaturateWheelSpeeds(
-                                states,
-                                SwerveConstants.MAX_SPEED_METERS_PER_SECOND);
-
-                frontLeft.setDesiredState(states[0]);
-                frontRight.setDesiredState(states[1]);
-                backLeft.setDesiredState(states[2]);
-                backRight.setDesiredState(states[3]);
-        }
-
-        public void stopModules() {
-
-                frontLeft.stop();
-                frontRight.stop();
-                backLeft.stop();
-                backRight.stop();
-        }
-
-        public void testKinematics() {
-                calculateModuleStates(1.0, 0.0, 0.0);
-        }
-
-        public Rotation2d getHeading() {
-
-                var yaw = gyro.getYaw().refresh();
-
-                if (!yaw.getStatus().isOK()) {
-                        return new Rotation2d();
-                }
-
-                return Rotation2d.fromDegrees(yaw.getValueAsDouble());
-        }
-
-        public void resetGyro() {
-                gyro.setYaw(0.0);
-        }
-
-        @Override
-        public void periodic() {
-
-                // Refresh each module's inputs before displaying them.
-                frontLeft.updateInputs();
-                frontRight.updateInputs();
-                backLeft.updateInputs();
-                backRight.updateInputs();
-
-                SmartDashboard.putNumber(
-                                "Robot Heading",
-                                getHeading().getDegrees());
-
-                frontLeft.updateDashboard("Front Left");
-                frontRight.updateDashboard("Front Right");
-                backRight.updateDashboard("Back Right");
-                backLeft.updateDashboard("Back Left");
-        }
+        SmartDashboard.putBoolean(
+                "Gyro Connected",
+                gyroInputs.connected);
+    }
 }
