@@ -117,4 +117,5 @@ public class SwerveModule {
         // sends request to TalonFX
         driveMotor.setControl(driveRequest);
     }
+
 }
