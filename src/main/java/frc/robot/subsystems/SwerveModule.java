@@ -20,7 +20,7 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 
 public class SwerveModule {
-    //Hardware
+    // Hardware
     // Drive motor: Kraken and TalonFX
     private final TalonFX driveMotor;
     // Steering motor: NEO and SPARKMAX
@@ -30,14 +30,13 @@ public class SwerveModule {
     private final double encoderOffset;
     private final VelocityVoltage driveRequest = new VelocityVoltage(0);
     private final PIDController steerPID = new PIDController(0.01, 0.0, 0.0);
-    
-// Constructor
+
+    // Constructor
     public SwerveModule(
-        int driveMotorID,
-        int steerMotorID,
-        int encoderId,
-        double encoderOffset
-    ){
+            int driveMotorID,
+            int steerMotorID,
+            int encoderId,
+            double encoderOffset) {
         // I gotta intialize hardware here
         driveMotor = new TalonFX(driveMotorID);
         TalonFXConfiguration driveConfig = new TalonFXConfiguration();
@@ -53,69 +52,69 @@ public class SwerveModule {
         steerMotor.configure(steerConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
         absoluteEncoder = new CANcoder(encoderId);
         this.encoderOffset = encoderOffset;
-        configureCANcoder(); // Update at 50 Hz 
-        steerPID.enableContinuousInput(-0.5, 0.5); //The controller needs to understand that 0.49 rotations and -0.49 rotations are close together, not far apart
-    } 
+        configureCANcoder(); // Update at 50 Hz
+        steerPID.enableContinuousInput(-0.5, 0.5); // The controller needs to understand that 0.49 rotations and -0.49
+                                                   // rotations are close together, not far apart
+    }
 
-     public void setDesiredState(SwerveModuleState state){
-        //Get the current wheel angle
-            double currentAngle = getSteeringAngleRadians();
+    public void setDesiredState(SwerveModuleState state) {
+        // Get the current wheel angle
+        double currentAngle = getSteeringAngleRadians();
         // Optimize desired state
-            SwerveModuleState optimizedState = SwerveModuleState.optimize(state, new Rotation2d(currentAngle));
-            double currentAngleRotations = getSteeringAngleRotations();
-            double desiredAngleRotations = optimizedState.angle.getRotations();
-            double steerOutput = steerPID.calculate(currentAngleRotations, desiredAngleRotations);
-            steerOutput = MathUtil.clamp(steerOutput, -0.5, 0.5);
-            steerMotor.set(steerOutput);
+        SwerveModuleState optimizedState = SwerveModuleState.optimize(state, new Rotation2d(currentAngle));
+        double currentAngleRotations = getSteeringAngleRotations();
+        double desiredAngleRotations = optimizedState.angle.getRotations();
+        double steerOutput = steerPID.calculate(currentAngleRotations, desiredAngleRotations);
+        steerOutput = MathUtil.clamp(steerOutput, -0.5, 0.5);
+        steerMotor.set(steerOutput);
         // Druve using optimized speed
-            setDriveSpeedMetersPerSecond(optimizedState.speedMetersPerSecond);
-    }
-    
-// read steering angle   
-public double getSteeringAngleRotations() {
-    var encoderPosition = absoluteEncoder.getAbsolutePosition().refresh();
-
-    if (!encoderPosition.getStatus().isOK()) {
-        return 0.0;
+        setDriveSpeedMetersPerSecond(optimizedState.speedMetersPerSecond);
     }
 
-    double rawPosition = encoderPosition.getValueAsDouble();
-    double correctedPosition = rawPosition - encoderOffset;
+    // read steering angle
+    public double getSteeringAngleRotations() {
+        var encoderPosition = absoluteEncoder.getAbsolutePosition().refresh();
 
-    return ((correctedPosition + 0.5) % 1.0 + 1.0) % 1.0 - 0.5;
+        if (!encoderPosition.getStatus().isOK()) {
+            return 0.0;
+        }
+
+        double rawPosition = encoderPosition.getValueAsDouble();
+        double correctedPosition = rawPosition - encoderOffset;
+
+        return ((correctedPosition + 0.5) % 1.0 + 1.0) % 1.0 - 0.5;
     }
-    
+
     private void configureCANcoder() {
-    CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
+        CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
 
-    absoluteEncoder.getConfigurator().apply(encoderConfig);
+        absoluteEncoder.getConfigurator().apply(encoderConfig);
 
-    absoluteEncoder.getAbsolutePosition().setUpdateFrequency(50);
+        absoluteEncoder.getAbsolutePosition().setUpdateFrequency(50);
     }
 
-    public double getSteeringAngleRadians(){
+    public double getSteeringAngleRadians() {
         return getSteeringAngleRotations() * 2.0 * Math.PI;
     }
 
-    public double getSteeringAngleDegrees(){
+    public double getSteeringAngleDegrees() {
         return getSteeringAngleRotations() * 360.0;
     }
 
     public void updateDashboard(String moduleName) {
-    SmartDashboard.putNumber(
-        moduleName + " Steering Angle (deg)",
-        getSteeringAngleDegrees()
-    );
-}
+        SmartDashboard.putNumber(
+                moduleName + " Steering Angle (deg)",
+                getSteeringAngleDegrees());
+    }
 
-    public void setDriveSpeedMetersPerSecond(double speed){
-        //convert linear speed into wheel rps
-        double wheelRotationsPerSecond = speed / (2.0*Math.PI*SwerveConstants.WHEEL_RADIUS_METERS);
-        //conver wheel speed into motor rps
+    public void setDriveSpeedMetersPerSecond(double speed) {
+        // convert linear speed into wheel rps
+        double wheelRotationsPerSecond = speed / (2.0 * Math.PI * SwerveConstants.WHEEL_RADIUS_METERS);
+        // convert wheel speed into motor rps
         double motorRotationsPerSecond = wheelRotationsPerSecond * SwerveConstants.DRIVE_GEAR_RATIO;
         // Updates the phoenix 6 velocity control request
-        driveRequest.withVelocity(motorRotationsPerSecond); 
-         //sends request to TalonFX
+        driveRequest.withVelocity(motorRotationsPerSecond);
+        // sends request to TalonFX
         driveMotor.setControl(driveRequest);
-    }  
+    }
 }
