@@ -5,9 +5,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-
-import frc.robot.subsystems.SwerveConstants;
-import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.SwerveDrive.SwerveConstants;
+import frc.robot.subsystems.SwerveDrive.SwerveSubsystem;
 
 public class RobotContainer {
 

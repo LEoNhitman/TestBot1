@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.SwerveDrive;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -11,6 +11,9 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+
+import frc.robot.subsystems.SwerveDrive.SwerveModuleIO.SwerveModuleIOInputs;
+
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkBase.PersistMode;
 
@@ -66,7 +69,7 @@ public class SwerveModuleIOReal implements SwerveModuleIO {
                 * (2.0 * Math.PI * SwerveConstants.WHEEL_RADIUS_METERS)
                 / SwerveConstants.DRIVE_GEAR_RATIO;
 
-        inputs.drivePostionMeters = drivePosition.getValueAsDouble()
+        inputs.drivePositionMeters = drivePosition.getValueAsDouble()
                 * (2.0 * Math.PI * SwerveConstants.WHEEL_RADIUS_METERS)
                 / SwerveConstants.DRIVE_GEAR_RATIO;
 

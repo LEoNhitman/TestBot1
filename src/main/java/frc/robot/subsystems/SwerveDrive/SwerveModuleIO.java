@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.SwerveDrive;
 
 public interface SwerveModuleIO {
     // Stores information received from the motors and encoder.
@@ -6,7 +6,7 @@ public interface SwerveModuleIO {
         // Current drive wheel velocity in meters per second
         public double driveVelocityMetersPerSecond;
          // Total distance traveled by the drive wheel
-        public double drivePostionMeters;
+        public double drivePositionMeters;
         // Current steering angle in rotations
         public double steerPositionRotations;
         // Voltage currently applied to the drive motor
