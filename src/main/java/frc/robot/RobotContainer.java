@@ -34,11 +34,12 @@ public class RobotContainer {
                 Commands.runOnce(
                         swerveSubsystem::stopModules,
                         swerveSubsystem));
-        //test
-        /**driverController.y().whileTrue(
+
+        driverController.y().whileTrue(
         Commands.run(
                 () -> swerveSubsystem.drive(0.0, 0.0, 1.0, false),
-                swerveSubsystem));*/
+                swerveSubsystem));
+        
     }
 
     public Command getAutonomousCommand() {
