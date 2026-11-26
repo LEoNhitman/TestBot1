@@ -12,10 +12,15 @@ import edu.wpi.first.math.geometry.Rotation2d;
 
 public class SwerveSubsystem extends SubsystemBase {
 
-        private final SwerveModule frontLeft;
-        private final SwerveModule frontRight;
-        private final SwerveModule backLeft;
-        private final SwerveModule backRight;
+        // frontLeft: 1, frontRight: 2, backLeft: 3, backRight: 4
+        private String[] moduleIdentification = {
+                "Front Left",
+                "Front Right",
+                "Back Left",
+                "Back Right"
+        };
+
+        private SwerveModule[] swerveModules;
 
         private final GyroIO gyroIO;
         private final GyroIO.GyroIOInputs gyroInputs = new GyroIO.GyroIOInputs();
@@ -48,43 +53,43 @@ public class SwerveSubsystem extends SubsystemBase {
 
                 if (useSimulation) {
 
-                        frontLeft = new SwerveModule(new SwerveModuleIOSim());
-                        frontRight = new SwerveModule(new SwerveModuleIOSim());
-                        backLeft = new SwerveModule(new SwerveModuleIOSim());
-                        backRight = new SwerveModule(new SwerveModuleIOSim());
+                        swerveModules[0] = new SwerveModule(new SwerveModuleIOSim(), 0);
+                        swerveModules[1] =  new SwerveModule(new SwerveModuleIOSim(), 1);
+                        swerveModules[2] = new SwerveModule(new SwerveModuleIOSim(), 2);
+                        swerveModules[3] = new SwerveModule(new SwerveModuleIOSim(), 3);
 
                         gyroSim = new GyroIOSim();
                         gyroIO = gyroSim;
 
                 } else {
 
-                        frontLeft = new SwerveModule(
+                        swerveModules[0] = new SwerveModule(
                                         new SwerveModuleIOReal(
                                                         SwerveConstants.FRONT_LEFT_DRIVE_ID,
                                                         SwerveConstants.FRONT_LEFT_STEER_ID,
                                                         SwerveConstants.FRONT_LEFT_CANCODER_ID,
-                                                        SwerveConstants.FRONT_LEFT_OFFSET));
+                                                        SwerveConstants.FRONT_LEFT_OFFSET), 0);
 
-                        frontRight = new SwerveModule(
+                        swerveModules[1] = new SwerveModule(
                                         new SwerveModuleIOReal(
                                                         SwerveConstants.FRONT_RIGHT_DRIVE_ID,
                                                         SwerveConstants.FRONT_RIGHT_STEER_ID,
                                                         SwerveConstants.FRONT_RIGHT_CANCODER_ID,
-                                                        SwerveConstants.FRONT_RIGHT_OFFSET));
+                                                        SwerveConstants.FRONT_RIGHT_OFFSET), 1);
 
-                        backLeft = new SwerveModule(
+                        swerveModules[2] = new SwerveModule(
                                         new SwerveModuleIOReal(
                                                         SwerveConstants.BACK_LEFT_DRIVE_ID,
                                                         SwerveConstants.BACK_LEFT_STEER_ID,
                                                         SwerveConstants.BACK_LEFT_CANCODER_ID,
-                                                        SwerveConstants.BACK_LEFT_OFFSET));
+                                                        SwerveConstants.BACK_LEFT_OFFSET), 2);
 
-                        backRight = new SwerveModule(
+                        swerveModules[3] = new SwerveModule(
                                         new SwerveModuleIOReal(
                                                         SwerveConstants.BACK_RIGHT_DRIVE_ID,
                                                         SwerveConstants.BACK_RIGHT_STEER_ID,
                                                         SwerveConstants.BACK_RIGHT_CANCODER_ID,
-                                                        SwerveConstants.BACK_RIGHT_OFFSET));
+                                                        SwerveConstants.BACK_RIGHT_OFFSET), 3);
 
                         gyroIO = new GyroIOReal(SwerveConstants.PIGEON_ID);
                 }
@@ -99,31 +104,24 @@ public class SwerveSubsystem extends SubsystemBase {
 
                 SwerveModuleState[] states = kinematics.toSwerveModuleStates(chassisSpeeds);
 
-                String[] names = {
-                                "Front Left",
-                                "Front Right",
-                                "Back Left",
-                                "Back Right"
-                };
-
                 for (int i = 0; i < states.length; i++) {
 
                         SmartDashboard.putNumber(
-                                        names[i] + " Desired Speed",
+                                        moduleIdentification[i] + " Desired Speed",
                                         states[i].speedMetersPerSecond);
 
                         SmartDashboard.putNumber(
-                                        names[i] + " Desired Angle",
+                                        moduleIdentification[i] + " Desired Angle",
                                         states[i].angle.getDegrees());
                 }
         }
 
         public void setAllModuleSpeed(double speedMetersPerSecond) {
 
-                frontLeft.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
-                frontRight.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
-                backLeft.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
-                backRight.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
+                for (SwerveModule module : swerveModules) {
+                        module.setDriveSpeedMetersPerSecond(speedMetersPerSecond);
+                }
+
         }
 
         public void drive(
@@ -158,11 +156,10 @@ public class SwerveSubsystem extends SubsystemBase {
                 SwerveDriveKinematics.desaturateWheelSpeeds(
                                 states,
                                 SwerveConstants.MAX_SPEED_METERS_PER_SECOND);
-
-                frontLeft.setDesiredState(states[0]);
-                frontRight.setDesiredState(states[1]);
-                backLeft.setDesiredState(states[2]);
-                backRight.setDesiredState(states[3]);
+                
+                for (int i=0; i<4; i++) {
+                        swerveModules[i].setDesiredState(states[i]);
+                }
         }
 
         public void crabwalk(
@@ -183,18 +180,16 @@ public class SwerveSubsystem extends SubsystemBase {
                                 states,
                                 SwerveConstants.MAX_SPEED_METERS_PER_SECOND);
 
-                frontLeft.setDesiredState(states[0]);
-                frontRight.setDesiredState(states[1]);
-                backLeft.setDesiredState(states[2]);
-                backRight.setDesiredState(states[3]);
+                for (int i=0; i<4; i++) {
+                        swerveModules[i].setDesiredState(states[i]);
+                }
         }
 
         public void stopModules() {
-
-                frontLeft.stop();
-                frontRight.stop();
-                backLeft.stop();
-                backRight.stop();
+                
+                for (SwerveModule module : swerveModules) {
+                        module.stop();
+                }
 
                 if (gyroSim != null) {
                         gyroSim.setAngularVelocity(0.0);
@@ -222,10 +217,9 @@ public class SwerveSubsystem extends SubsystemBase {
         @Override
         public void periodic() {
 
-                frontLeft.updateInputs();
-                frontRight.updateInputs();
-                backLeft.updateInputs();
-                backRight.updateInputs();
+                for (SwerveModule module : swerveModules) {
+                        module.updateInputs();
+                }
 
                 gyroIO.updateInputs(gyroInputs);
 
@@ -236,10 +230,9 @@ public class SwerveSubsystem extends SubsystemBase {
                 SmartDashboard.putBoolean(
                                 "Gyro Connected",
                                 gyroInputs.connected);
-
-                frontLeft.updateDashboard("Front Left");
-                frontRight.updateDashboard("Front Right");
-                backLeft.updateDashboard("Back Left");
-                backRight.updateDashboard("Back Right");
+                
+                for (int i=0; i<4; i++) {
+                        swerveModules[i].updateDashboard(moduleIdentification[i]);
+                }
         }
 }

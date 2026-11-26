@@ -18,9 +18,13 @@ public class SwerveModule {
     // PID controller responsible for rotating the module to its target angle.
     private final PIDController steerPID = new PIDController(0.01, 0.0, 0.0);
 
+    // identifies the swerve module
+    private int id;
+
     // Constructor receives the IO implementation instead of creating hardware.
-    public SwerveModule(SwerveModuleIO io) {
+    public SwerveModule(SwerveModuleIO io, int id) {
         this.io = io;
+        this.id = id;
 
         // Allows the PID controller to recognize that angles near
         // -0.5 and +0.5 rotations are close together.
