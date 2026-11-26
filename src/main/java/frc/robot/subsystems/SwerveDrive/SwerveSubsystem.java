@@ -48,10 +48,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
                 if (useSimulation) {
 
-                        frontLeft = new SwerveModule(new SwerveModuleIOSim());
-                        frontRight = new SwerveModule(new SwerveModuleIOSim());
-                        backLeft = new SwerveModule(new SwerveModuleIOSim());
-                        backRight = new SwerveModule(new SwerveModuleIOSim());
+                        frontLeft = new SwerveModule(new SwerveModuleIOSim(), 0);
+                        frontRight = new SwerveModule(new SwerveModuleIOSim(), 1);
+                        backLeft = new SwerveModule(new SwerveModuleIOSim(), 2);
+                        backRight = new SwerveModule(new SwerveModuleIOSim(), 3);
 
                         gyroSim = new GyroIOSim();
                         gyroIO = gyroSim;
@@ -63,28 +63,28 @@ public class SwerveSubsystem extends SubsystemBase {
                                                         SwerveConstants.FRONT_LEFT_DRIVE_ID,
                                                         SwerveConstants.FRONT_LEFT_STEER_ID,
                                                         SwerveConstants.FRONT_LEFT_CANCODER_ID,
-                                                        SwerveConstants.FRONT_LEFT_OFFSET));
+                                                        SwerveConstants.FRONT_LEFT_OFFSET), 0);
 
                         frontRight = new SwerveModule(
                                         new SwerveModuleIOReal(
                                                         SwerveConstants.FRONT_RIGHT_DRIVE_ID,
                                                         SwerveConstants.FRONT_RIGHT_STEER_ID,
                                                         SwerveConstants.FRONT_RIGHT_CANCODER_ID,
-                                                        SwerveConstants.FRONT_RIGHT_OFFSET));
+                                                        SwerveConstants.FRONT_RIGHT_OFFSET), 1);
 
                         backLeft = new SwerveModule(
                                         new SwerveModuleIOReal(
                                                         SwerveConstants.BACK_LEFT_DRIVE_ID,
                                                         SwerveConstants.BACK_LEFT_STEER_ID,
                                                         SwerveConstants.BACK_LEFT_CANCODER_ID,
-                                                        SwerveConstants.BACK_LEFT_OFFSET));
+                                                        SwerveConstants.BACK_LEFT_OFFSET), 2);
 
                         backRight = new SwerveModule(
                                         new SwerveModuleIOReal(
                                                         SwerveConstants.BACK_RIGHT_DRIVE_ID,
                                                         SwerveConstants.BACK_RIGHT_STEER_ID,
                                                         SwerveConstants.BACK_RIGHT_CANCODER_ID,
-                                                        SwerveConstants.BACK_RIGHT_OFFSET));
+                                                        SwerveConstants.BACK_RIGHT_OFFSET), 3);
 
                         gyroIO = new GyroIOReal(SwerveConstants.PIGEON_ID);
                 }
