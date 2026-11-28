@@ -1,75 +1,121 @@
 
 package frc.robot.commands;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.IntSupplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
+
 import frc.robot.subsystems.SwerveDrive.SwerveConstants;
 import frc.robot.subsystems.SwerveDrive.SwerveSubsystem;
 
 public class SwerveDriveCommand extends Command {
 
-  private final SwerveSubsystem swerveSubsystem;
+    private final SwerveSubsystem swerveSubsystem;
 
-  private final DoubleSupplier forwardSupplier;
-  private final DoubleSupplier strafeSupplier;
-  private final DoubleSupplier rotationSupplier;
-  private final DoubleSupplier fieldRelativeSupplier;
+    private final DoubleSupplier forwardSupplier;
+    private final DoubleSupplier strafeSupplier;
+    private final DoubleSupplier rotationSupplier;
 
-  public SwerveDriveCommand(
-      SwerveSubsystem swerveSubsystem,
-      DoubleSupplier forwardSupplier,
-      DoubleSupplier strafeSupplier,
-      DoubleSupplier rotationSupplier,
-      DoubleSupplier fieldRelativeSupplier) {
+    private final BooleanSupplier fieldRelativeSupplier;
+    private final BooleanSupplier precisionSupplier;
+    private final IntSupplier povSupplier;
 
-    this.swerveSubsystem = swerveSubsystem;
+    public SwerveDriveCommand(
+            SwerveSubsystem swerveSubsystem,
+            DoubleSupplier forwardSupplier,
+            DoubleSupplier strafeSupplier,
+            DoubleSupplier rotationSupplier,
+            BooleanSupplier fieldRelativeSupplier,
+            BooleanSupplier precisionSupplier,
+            IntSupplier povSupplier) {
 
-    this.forwardSupplier = forwardSupplier;
-    this.strafeSupplier = strafeSupplier;
-    this.rotationSupplier = rotationSupplier;
-    this.fieldRelativeSupplier = fieldRelativeSupplier;
+        this.swerveSubsystem = swerveSubsystem;
 
-    addRequirements(swerveSubsystem);
-  }
+        this.forwardSupplier = forwardSupplier;
+        this.strafeSupplier = strafeSupplier;
+        this.rotationSupplier = rotationSupplier;
 
-  @Override
-  public void execute() {
+        this.fieldRelativeSupplier = fieldRelativeSupplier;
+        this.precisionSupplier = precisionSupplier;
+        this.povSupplier = povSupplier;
 
-    double forward = -forwardSupplier.getAsDouble();
-    double strafe = -strafeSupplier.getAsDouble();
-    double rotation = -rotationSupplier.getAsDouble();
+        addRequirements(swerveSubsystem);
+    }
 
-    forward = MathUtil.applyDeadband(
-        forward, SwerveConstants.DEADBAND);
+    @Override
+    public void execute() {
 
-    strafe = MathUtil.applyDeadband(
-        strafe, SwerveConstants.DEADBAND);
+        // Read controller inputs.
+        double forward = -forwardSupplier.getAsDouble();
+        double strafe = -strafeSupplier.getAsDouble();
+        double rotation = -rotationSupplier.getAsDouble();
 
-    rotation = MathUtil.applyDeadband(
-        rotation, SwerveConstants.DEADBAND);
+        // Apply deadband to eliminate small unwanted inputs.
+        forward = MathUtil.applyDeadband(
+                forward, SwerveConstants.DEADBAND);
 
-    forward *= SwerveConstants.MAX_SPEED_METERS_PER_SECOND;
-    strafe *= SwerveConstants.MAX_SPEED_METERS_PER_SECOND;
-    rotation *= SwerveConstants.MAX_ANGULAR_SPEED;
+        strafe = MathUtil.applyDeadband(
+                strafe, SwerveConstants.DEADBAND);
 
-    boolean fieldRelative = fieldRelativeSupplier.getAsDouble() > 0.5;
+        rotation = MathUtil.applyDeadband(
+                rotation, SwerveConstants.DEADBAND);
 
-    swerveSubsystem.drive(
-        forward,
-        strafe,
-        rotation,
-        fieldRelative);
-  }
+        // Apply precision mode speed reduction.
+        double speedMultiplier = precisionSupplier.getAsBoolean()
+                ? SwerveConstants.PRECISION_SPEED_MULTIPLIER
+                : 1.0;
 
-  @Override
-  public void end(boolean interrupted) {
-    swerveSubsystem.stopModules();
-  }
+        forward *= SwerveConstants.MAX_SPEED_METERS_PER_SECOND
+                * speedMultiplier;
 
-  @Override
-  public boolean isFinished() {
-    return false;
-  }
+        strafe *= SwerveConstants.MAX_SPEED_METERS_PER_SECOND
+                * speedMultiplier;
+
+        rotation *= SwerveConstants.MAX_ANGULAR_SPEED
+                * speedMultiplier;
+
+        // Check whether the D-pad is being pressed.
+        int pov = povSupplier.getAsInt();
+
+        if (pov != -1) {
+
+            // Convert D-pad angle into robot-relative movement.
+            double angle = Math.toRadians(pov);
+
+            double crabForward = Math.cos(angle)
+                    * SwerveConstants.MAX_SPEED_METERS_PER_SECOND
+                    * speedMultiplier;
+
+            double crabStrafe = -Math.sin(angle)
+                    * SwerveConstants.MAX_SPEED_METERS_PER_SECOND
+                    * speedMultiplier;
+
+            swerveSubsystem.crabwalk(
+                    crabForward,
+                    crabStrafe,
+                    rotation);
+
+        } else {
+
+            // Normal field-relative or robot-relative driving.
+            swerveSubsystem.drive(
+                    forward,
+                    strafe,
+                    rotation,
+                    fieldRelativeSupplier.getAsBoolean());
+        }
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        swerveSubsystem.stopModules();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return false;
+    }
 }
